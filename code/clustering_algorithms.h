@@ -1,4 +1,3 @@
-/* Copyright 2017 Baytekov Nikita */
 #include "default_types.h"
 #include "log_wrapper.h"
 #include "SampleSet.h"
