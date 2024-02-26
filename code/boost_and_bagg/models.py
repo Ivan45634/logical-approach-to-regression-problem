@@ -52,6 +52,7 @@ class BoostingElementaryPredicates(BaseEstimator, RegressorMixin):
                 # print(covers)
 
                 if self.max_cov is not None and len(covers) > self.max_cov: #TODO: добавить стохастику в построение и выбор покрытий
+                    
                     covers = covers[:self.max_cov]
                 
                 if len(covers) == 0:
