@@ -43,7 +43,7 @@ class BaggingElementaryTrees:
         else:
             features = np.arange(X.shape[1])
 
-        estimator = self.base_estimator.__class__()  
+        estimator = self.base_estimator.__class__(num_iter=11, m=40)  # fixing bag with initialization's parameters
         estimator.fit(X[samples][:, features], y[samples])
         
         return estimator, features
