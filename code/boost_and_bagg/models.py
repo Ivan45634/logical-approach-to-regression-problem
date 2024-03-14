@@ -15,6 +15,7 @@ class BoostingElementaryPredicates(BaseEstimator, RegressorMixin):
         self.covers = [] # covers for the learners
         # self.runc = RuncDualizer()
         self.base_value = None
+        self.coeffs = []
         self.key_objects = [] # "bad" objects for the learners
         self.train_losses = []  # train loss for each iteration
         self.test_losses = []  # test loss for each iteration
@@ -57,7 +58,7 @@ class BoostingElementaryPredicates(BaseEstimator, RegressorMixin):
                 if len(covers) == 0:
                     break
 
-                for cover in covers[:5000]:
+                for cover in covers:
                     h_mask_l = np.isin(np.arange(n), cover)
                     h_mask_g = np.isin(np.arange(n, 2*n), cover)
                     H_l = np.where((X[:, h_mask_l] >= X[max_residual_idx][h_mask_l]).all(axis=1), 1, 0)
@@ -68,21 +69,30 @@ class BoostingElementaryPredicates(BaseEstimator, RegressorMixin):
                         h_m, min_residual_sum = base_estimator, residual_sum_maybe
                         best_cover = cover
             self.h.append(h_m)
-            gamma_m = self.optimize(y, y_hat, h_m)[0]
+            # gamma_m = self.optimize(y, y_hat, h_m)[0]
+            opt_coeffs = self.optimize(y, y_hat, h)  # function returns the optimal (a, b)
+            self.coeffs.append(opt_coeffs)
+            self.coeffs.append(opt_coeffs)
             self.gamma.append(gamma_m)
             self.covers.append(best_cover)
             self.key_objects.append(X[max_residual_idx])
             self.est_res.append(residuals[max_residual_idx])
-            y_hat += gamma_m * h_m
+            # y_hat += gamma_m * h_m
+            y_hat = self.update_predictions(y_hat, opt_coeffs, h_m)
             
         # del self.runc
         
         return self
 
     def optimize(self, y, y_hat, h):
-        loss = lambda gamma: ((y - y_hat - gamma * h) ** 2).mean()
+        loss = lambda a, b: ((y - y_hat - a * h + b) ** 2).mean()
         result = minimize(loss, x0=0.0)
-        return result.x
+        return result.x, result.y
+
+    def update_predictions(self, y_hat, coeffs, h_m):
+        # Assuming h(x) returns either 0 or 1, update y_hat based on the added learner and its coefficients (a, b)
+        a, b = coeffs
+        return y_hat + a * h_m + b
     
     def predict(self, X):
         y_pred = np.full(X.shape[0], self.base_value)
