@@ -17,15 +17,23 @@ def _without_replacement(rng, n_max, size):
     return np.array(list(bag))
 
 
-def _generate_indices(rng, n, size, bootstrap):
-    if bootstrap:
-        return rng.integers(0, n, size)
-    return _without_replacement(rng, n, size)
+# def _generate_indices(rng, n, size, bootstrap):
+#     if bootstrap:
+#         return rng.integers(0, n, size)
+#     return _without_replacement(rng, n, size)
 
 
 # def _generate_bagging_indices(rng, n, fraction, bootstrap):
 #     size = math.ceil(fraction * n)
 #     return _generate_indices(rng, n, size, bootstrap)
+
+def generate_bagging_indices(rng, n_samples, sample_fraction, bootstrap):
+    """Generates bootstrap indices for bagging."""
+    if bootstrap:
+        indices = rng.choice(n_samples, size=int(n_samples*sample_fraction), replace=True)
+    else:
+        indices = rng.choice(n_samples, size=int(n_samples*sample_fraction), replace=False)
+    return indices
 
 
 def _fit_k_estimators(k_estimators, seeds, ensemble, X, y, G, coefs, trace):
