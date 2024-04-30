@@ -48,6 +48,8 @@ from ucimlrepo import fetch_ucirepo
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
+def rmse(y1, y2):
+    return np.mean((y1-y2)**2)**0.5
 # RANDOMIZED SEARCH
 def hp_tuning(X_train, X_test, y_train, y_test, model, params, dataset_name, model_name, n_iter=10):
     scoring_fnc = make_scorer(rmse, greater_is_better=False)
@@ -92,9 +94,10 @@ X_train, y_train, X_val, y_val, X_test, y_test = preprocess(X, 'RH')
 dataset_name = 'Air Quality'
 
 lb_params =  {
-    "num_iter" : np.linspace(1, 100, 10).astype(int),
-    "m" : np.linspace(10, 20, 5).astype(int),
-    "max_cov": [100, 500]
+    "num_iter" : np.linspace(300, 600, 5).astype(int),
+    "m" : np.linspace(5, 20, 4).astype(int),
+    "max_cov": [500],
+    'learning_rate': [0.1, 0.5, 0.9]
 }
 
 lgbm_params = {

@@ -120,7 +120,7 @@ class BoostingElementaryPredicatesv2(BaseEstimator, RegressorMixin):
     - max_cov: максимальное количество покрытий
     """
     
-    def __init__(self, num_iter=None, m=None, max_cov=None):
+    def __init__(self, num_iter=None, m=None, max_cov=None, learning_rate=1.0):
         self.num_iter = num_iter
         self.m = m
         self.max_cov = max_cov
@@ -133,6 +133,7 @@ class BoostingElementaryPredicatesv2(BaseEstimator, RegressorMixin):
         self.train_losses = []  # train loss for each iteration
         self.test_losses = []  # test loss for each iteration
         self.est_res = []
+        self.learning_rate = learning_rate
 
     def fit(self, X, y):
         n = X.shape[1]
@@ -191,7 +192,9 @@ class BoostingElementaryPredicatesv2(BaseEstimator, RegressorMixin):
                 # Если внутренний цикл прерван из-за достижения лимита, прерываем и внешний цикл
                 if num_processed_covers >= self.max_cov:
                     break
-            
+
+            best_gamma = best_gamma[0] * self.learning_rate, best_gamma[1] * self.learning_rate
+
             self.h.append(best_cover)
             self.gamma.append(best_gamma)
             self.covers.append(best_cover)
