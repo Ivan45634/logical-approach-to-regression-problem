@@ -1,6 +1,3 @@
-import sys
-sys.path.append("/Users/admin/Desktop/diploma")
-
 import numpy as np
 import pandas as pd
 from sklearn.base import BaseEstimator, RegressorMixin
@@ -41,15 +38,12 @@ from sklearn.base import clone
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import make_scorer, r2_score, mean_squared_error
 
-from memory_profiler import profile
 from time import time
 from ucimlrepo import fetch_ucirepo 
 
 import warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-def rmse(y1, y2):
-    return np.mean((y1-y2)**2)**0.5
 # RANDOMIZED SEARCH
 def hp_tuning(X_train, X_test, y_train, y_test, model, params, dataset_name, model_name, n_iter=10):
     scoring_fnc = make_scorer(rmse, greater_is_better=False)
@@ -73,25 +67,34 @@ def hp_tuning(X_train, X_test, y_train, y_test, model, params, dataset_name, mod
     print(f"--Train R2 for {model_name} on {dataset_name}--\n{train_r2}")
     print(f"--Test R2 for {model_name} on {dataset_name}--\n{test_r2}\n")
 
-    return best_model, train_rmse, test_rmse, train_r2, test_r2
+    return best_model, randomized_search.best_params_, train_rmse, test_rmse, train_r2, test_r2, 
 
 
 
-air_quality = fetch_ucirepo(id=360) 
+# air_quality = fetch_ucirepo(id=360) 
+  
+# # data (as pandas dataframes) 
+# X = air_quality.data.features 
+# y = air_quality.data.targets 
+
+# X['Date'] = pd.to_datetime(X['Date'], format='%m/%d/%Y')
+# X['Month']= X['Date'].dt.month  
+# X['Hour']=X['Time'].apply(lambda x: int(x.split(':')[0]))
+
+# X = X.drop(['Date', 'Time'], axis=1)
+
+automobile = fetch_ucirepo(id=10) 
   
 # data (as pandas dataframes) 
-X = air_quality.data.features 
-y = air_quality.data.targets 
+X = automobile.data.features 
+y = automobile.data.targets 
 
-X['Date'] = pd.to_datetime(X['Date'], format='%m/%d/%Y')
-X['Month']= X['Date'].dt.month  
-X['Hour']=X['Time'].apply(lambda x: int(x.split(':')[0]))
+X = X[~X['price'].isna()].reset_index()
 
-X = X.drop(['Date', 'Time'], axis=1)
+X_train, X_val, X_test, y_train, y_val, y_test = preprocess(X, 'price')
 
-X_train, y_train, X_val, y_val, X_test, y_test = preprocess(X, 'RH')
-
-dataset_name = 'Air Quality'
+# dataset_name = 'Air Quality'
+dataset_name = 'Automobile'
 
 lb_params =  {
     "num_iter" : np.linspace(300, 600, 5).astype(int),
@@ -120,16 +123,30 @@ gb_params = {
 
 models = [
     ("BoostingElementaryPredicates", BoostingElementaryPredicatesv2(max_cov=500), lb_params),
-    ("LightGBM", LGBMRegressor(verbose=-1), lgbm_params),
-    ("CatBoost", CatBoostRegressor(), cb_params),
+    ("LightGBM", LGBMRegressor(num_threads=1, verbose=-1), lgbm_params),
+    ("CatBoost", CatBoostRegressor(thread_count=1), cb_params),
     ("GBRegressor", GradientBoostingRegressor(), gb_params)
 ]
 
 results = []
 
-for model_name, model, params in models:
-    _, train_rmse, test_rmse, train_r2, test_r2 = hp_tuning(X_train, X_test, y_train, y_test, model, params, dataset_name, model_name)
-    results.append((dataset_name, model_name, train_rmse, test_rmse, train_r2, test_r2))
+filename = f"results_{dataset_name}.txt"
 
-results_df = pd.DataFrame(results, columns=['Dataset', 'Model', 'Train RMSE', 'Test RMSE', 'Train R2', 'Test R2'])
-print(results_df)
+with open(filename, 'w') as file:
+    for model_name, model, params in models:
+        _, best_params, train_rmse, test_rmse, train_r2, test_r2 = hp_tuning(X_train, X_test, y_train, y_test, model, params, dataset_name, model_name)
+        results.append((dataset_name, model_name, train_rmse, test_rmse, train_r2, test_r2))
+        # Запись результатов в файл
+        file.write(f"Best hyperparameters for {model_name} on {dataset_name}: {best_params}")
+        file.write(f"{model_name} Results:\n")
+        file.write(f"Train RMSE: {train_rmse}\n")
+        file.write(f"Test RMSE: {test_rmse}\n")
+        file.write(f"Train R2: {train_r2}\n")
+        file.write(f"Test R2: {test_r2}\n")
+        file.write("-----------------------------------\n")
+
+    results_df = pd.DataFrame(results, columns=['Dataset', 'Model', 'Train RMSE', 'Test RMSE', 'Train R2', 'Test R2'])
+    file.write(f"\nSummary Results:\n")
+    file.write(results_df.to_string(index=False))
+
+print(f"Results have been saved to {filename}")
