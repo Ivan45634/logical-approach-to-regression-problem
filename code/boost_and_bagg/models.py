@@ -152,8 +152,10 @@ class BoostingElementaryPredicatesv2(BaseEstimator, RegressorMixin):
             else:
                 candidates = np.arange(len(residuals))
 
+            # Создание матрицы сравнения опорного объекта с остальными
             for idx in candidates:
-                # Создание матрицы сравнения опорного объекта с остальными
+                if residuals[idx] <= 0:  #   нам не надо занулять предикат на тех слагаемых, которые будут уменьшать сумму \sum B(S_i) r_i
+                    break
                 comp_row = []
                 for j in range(n):
                     if X[idx, j] < key_object[j]:
