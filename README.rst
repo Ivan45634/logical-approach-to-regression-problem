@@ -28,12 +28,12 @@ Abstract
 
 Research publications
 ===============================
-1. 
+...
 
 
 Presentations at conferences on the topic of research
 ==========================================================
-1. 
+...
 
 
 Software modules developed as part of the study
